@@ -87,13 +87,16 @@ if os.environ.get('POSTGRES_URL') or os.environ.get('DATABASE_URL'):
         )
     }
 else:
-    # Local development: ใช้ SQLite
     DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
-        }
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'postgres',
+        'USER': 'postgres',
+        'PASSWORD': 'az0954852404',
+        'HOST': 'db.ixeaevilyqvsbopxakpo.supabase.co',
+        'POST': '5432',
     }
+}
 
 
 # Password validation
