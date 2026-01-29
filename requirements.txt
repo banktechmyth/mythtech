@@ -1,0 +1,6 @@
+django
+asgiref
+autopep8
+pycodestyle
+sqlparse
+tomli

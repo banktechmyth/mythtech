@@ -1,0 +1,62 @@
+{% extends 'ICANDEP/base.html' %}
+
+{% block title %}ลบรายการ - ระบบจัดการรายรับรายจ่าย{% endblock %}
+{% block page_title %}ลบรายการ{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="m-0 font-weight-bold text-danger">
+                    <i class="bi bi-exclamation-triangle me-2"></i>ยืนยันการลบ
+                </h6>
+            </div>
+            <div class="card-body text-center">
+                <i class="bi bi-exclamation-triangle text-danger" style="font-size: 4rem;"></i>
+                <h4 class="mt-3">คุณต้องการลบรายการนี้หรือไม่?</h4>
+                
+                <div class="card mt-4">
+                    <div class="card-body">
+                        <h6 class="card-title">{{ transaction.title }}</h6>
+                        <p class="card-text">
+                            <strong>จำนวนเงิน:</strong> 
+                            <span class="{% if transaction.is_income %}text-success{% else %}text-danger{% endif %}">
+                                ฿{{ transaction.amount|floatformat:2 }}
+                            </span>
+                        </p>
+                        <p class="card-text">
+                            <strong>หมวดหมู่:</strong> {{ transaction.get_category_display }}
+                        </p>
+                        <p class="card-text">
+                            <strong>วันที่:</strong> {{ transaction.date|date:"d/m/Y" }}
+                        </p>
+                        {% if transaction.description %}
+                            <p class="card-text">
+                                <strong>รายละเอียด:</strong> {{ transaction.description }}
+                            </p>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="alert alert-warning mt-4">
+                    <i class="bi bi-info-circle me-2"></i>
+                    <strong>คำเตือน:</strong> การลบรายการนี้จะไม่สามารถกู้คืนได้
+                </div>
+                
+                <form method="post" class="mt-4">
+                    {% csrf_token %}
+                    <div class="d-flex justify-content-center gap-2">
+                        <a href="{% url 'ICANDEP:transaction_list' %}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left me-2"></i>ยกเลิก
+                        </a>
+                        <button type="submit" class="btn btn-danger">
+                            <i class="bi bi-trash me-2"></i>ลบรายการ
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

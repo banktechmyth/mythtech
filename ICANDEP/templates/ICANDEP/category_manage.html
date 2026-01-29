@@ -1,0 +1,301 @@
+{% extends 'ICANDEP/base.html' %}
+
+{% block title %}จัดการหมวดหมู่ - ระบบจัดการรายรับรายจ่าย{% endblock %}
+{% block page_title %}จัดการหมวดหมู่{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- ตารางหมวดหมู่ -->
+    <div class="col-lg-8 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="m-0 font-weight-bold" style="color: var(--text-primary);">
+                    <i class="bi bi-tags me-2"></i>รายการหมวดหมู่ทั้งหมด
+                </h6>
+            </div>
+            <div class="card-body">
+                {% if categories %}
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead>
+                                <tr>
+                                    <th>ชื่อหมวดหมู่</th>
+                                    <th>ประเภท</th>
+                                    <th>สถานะ</th>
+                                    <th>ไอคอน</th>
+                                    <th>การดำเนินการ</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for cat in categories %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ cat.name }}</strong>
+                                        {% if cat.description %}
+                                            <br><small class="text-muted">{{ cat.description }}</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if cat.transaction_type == 'income' %}
+                                            <span class="badge badge-income">รายรับ</span>
+                                        {% else %}
+                                            <span class="badge badge-expense">รายจ่าย</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if cat.is_active %}
+                                            <span class="badge bg-success">ใช้งาน</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">ปิดใช้งาน</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if cat.icon %}
+                                            <i class="bi {{ cat.icon }}"></i>
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'ICANDEP:delete_category' cat.pk %}" 
+                                           class="btn btn-sm btn-outline-danger" 
+                                           title="ลบหมวดหมู่"
+                                           onclick="return confirm('คุณแน่ใจหรือไม่ว่าต้องการลบหมวดหมู่ \"{{ cat.name }}\"?\n\n⚠️ หากมีรายการธุรกรรมที่ใช้หมวดหมู่นี้อยู่ จะไม่สามารถลบได้')">
+                                            <i class="bi bi-trash"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-inbox fs-1 text-muted"></i>
+                        <p class="text-muted mt-2">ยังไม่มีหมวดหมู่ในระบบ</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- ฟอร์มเพิ่มหมวดหมู่ -->
+    <div class="col-lg-4 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="m-0 font-weight-bold" style="color: var(--text-primary);">
+                    <i class="bi bi-plus-circle me-2"></i>เพิ่มหมวดหมู่ใหม่
+                </h6>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+
+                    <div class="mb-3">
+                        <label for="{{ form.name.id_for_label }}" class="form-label">
+                            {{ form.name.label }} <span class="text-danger">*</span>
+                        </label>
+                        {{ form.name }}
+                        {% if form.name.errors %}
+                            <div class="text-danger small mt-1">
+                                {% for error in form.name.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="{{ form.transaction_type.id_for_label }}" class="form-label">
+                            {{ form.transaction_type.label }} <span class="text-danger">*</span>
+                        </label>
+                        {{ form.transaction_type }}
+                        {% if form.transaction_type.errors %}
+                            <div class="text-danger small mt-1">
+                                {% for error in form.transaction_type.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="{{ form.description.id_for_label }}" class="form-label">
+                            {{ form.description.label }}
+                        </label>
+                        {{ form.description }}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="{{ form.icon.id_for_label }}" class="form-label">
+                            {{ form.icon.label }}
+                        </label>
+                        <div class="input-group">
+                            {{ form.icon }}
+                            <button type="button" class="btn btn-outline-secondary" id="emojiPickerBtn" title="เลือกอิโมจิ">
+                                😀
+                            </button>
+                        </div>
+                        <div id="emojiPicker" class="mt-2" style="display: none;">
+                            <div class="card" style="background: var(--bg-tertiary); border: 1px solid var(--border-color);">
+                                <div class="card-body">
+                                    <div class="mb-2">
+                                        <small class="text-muted">เลือกอิโมจิ:</small>
+                                    </div>
+                                    <div class="emoji-grid" style="display: grid; grid-template-columns: repeat(8, 1fr); gap: 0.5rem; max-height: 200px; overflow-y: auto;">
+                                        <!-- รายรับ -->
+                                        <span class="emoji-btn" data-emoji="💰" title="เงิน">💰</span>
+                                        <span class="emoji-btn" data-emoji="💵" title="ธนบัตร">💵</span>
+                                        <span class="emoji-btn" data-emoji="💳" title="บัตรเครดิต">💳</span>
+                                        <span class="emoji-btn" data-emoji="📈" title="กราฟขึ้น">📈</span>
+                                        <span class="emoji-btn" data-emoji="✅" title="สำเร็จ">✅</span>
+                                        
+                                        <!-- อาหาร -->
+                                        <span class="emoji-btn" data-emoji="🍔" title="เบอร์เกอร์">🍔</span>
+                                        <span class="emoji-btn" data-emoji="🍕" title="พิซซ่า">🍕</span>
+                                        <span class="emoji-btn" data-emoji="🍜" title="ก๋วยเตี๋ยว">🍜</span>
+                                        <span class="emoji-btn" data-emoji="🍱" title="ข้าวกล่อง">🍱</span>
+                                        <span class="emoji-btn" data-emoji="🍛" title="ข้าวแกง">🍛</span>
+                                        <span class="emoji-btn" data-emoji="🍝" title="สปาเก็ตตี้">🍝</span>
+                                        <span class="emoji-btn" data-emoji="🍲" title="หม้อไฟ">🍲</span>
+                                        <span class="emoji-btn" data-emoji="🥗" title="สลัด">🥗</span>
+                                        <span class="emoji-btn" data-emoji="🍳" title="ไข่เจียว">🍳</span>
+                                        <span class="emoji-btn" data-emoji="🥘" title="แกง">🥘</span>
+                                        <span class="emoji-btn" data-emoji="🍤" title="กุ้งทอด">🍤</span>
+                                        <span class="emoji-btn" data-emoji="🍣" title="ซูชิ">🍣</span>
+                                        
+                                        <!-- เครื่องดื่ม -->
+                                        <span class="emoji-btn" data-emoji="☕" title="กาแฟ">☕</span>
+                                        <span class="emoji-btn" data-emoji="🥤" title="เครื่องดื่ม">🥤</span>
+                                        <span class="emoji-btn" data-emoji="🧃" title="น้ำผลไม้">🧃</span>
+                                        <span class="emoji-btn" data-emoji="🍺" title="เบียร์">🍺</span>
+                                        <span class="emoji-btn" data-emoji="🍷" title="ไวน์">🍷</span>
+                                        <span class="emoji-btn" data-emoji="🧊" title="น้ำแข็ง">🧊</span>
+                                        
+                                        <!-- ของหวาน -->
+                                        <span class="emoji-btn" data-emoji="🍰" title="เค้ก">🍰</span>
+                                        <span class="emoji-btn" data-emoji="🍮" title="พุดดิ้ง">🍮</span>
+                                        <span class="emoji-btn" data-emoji="🍭" title="อมยิ้ม">🍭</span>
+                                        <span class="emoji-btn" data-emoji="🍪" title="คุกกี้">🍪</span>
+                                        <span class="emoji-btn" data-emoji="🍩" title="โดนัท">🍩</span>
+                                        <span class="emoji-btn" data-emoji="🍫" title="ช็อกโกแลต">🍫</span>
+                                        
+                                        <!-- รายจ่าย -->
+                                        <span class="emoji-btn" data-emoji="🛒" title="ตะกร้าสินค้า">🛒</span>
+                                        <span class="emoji-btn" data-emoji="💸" title="เงินออก">💸</span>
+                                        <span class="emoji-btn" data-emoji="📉" title="กราฟลง">📉</span>
+                                        <span class="emoji-btn" data-emoji="⚡" title="ไฟฟ้า">⚡</span>
+                                        <span class="emoji-btn" data-emoji="💧" title="น้ำ">💧</span>
+                                        <span class="emoji-btn" data-emoji="🔥" title="แก๊ส">🔥</span>
+                                        <span class="emoji-btn" data-emoji="👥" title="พนักงาน">👥</span>
+                                        <span class="emoji-btn" data-emoji="🏢" title="อาคาร">🏢</span>
+                                        <span class="emoji-btn" data-emoji="📢" title="โฆษณา">📢</span>
+                                        <span class="emoji-btn" data-emoji="🔧" title="ซ่อมบำรุง">🔧</span>
+                                        <span class="emoji-btn" data-emoji="🚚" title="ขนส่ง">🚚</span>
+                                        <span class="emoji-btn" data-emoji="📋" title="ภาษี">📋</span>
+                                        
+                                        <!-- อื่นๆ -->
+                                        <span class="emoji-btn" data-emoji="📦" title="กล่อง">📦</span>
+                                        <span class="emoji-btn" data-emoji="🧰" title="เครื่องมือ">🧰</span>
+                                        <span class="emoji-btn" data-emoji="🍽️" title="ช้อนส้อม">🍽️</span>
+                                        <span class="emoji-btn" data-emoji="🥄" title="ช้อน">🥄</span>
+                                        <span class="emoji-btn" data-emoji="🍴" title="ช้อนส้อม">🍴</span>
+                                    </div>
+                                    <div class="mt-2 text-end">
+                                        <button type="button" class="btn btn-sm btn-secondary" onclick="document.getElementById('emojiPicker').style.display='none'">
+                                            ปิด
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3 form-check">
+                        {{ form.is_active }}
+                        <label class="form-check-label" for="{{ form.is_active.id_for_label }}">
+                            ใช้งานหมวดหมู่นี้
+                        </label>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-check-circle me-2"></i>บันทึกหมวดหมู่
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.emoji-btn {
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 0.5rem;
+    text-align: center;
+    transition: all 0.2s ease;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+}
+
+.emoji-btn:hover {
+    background: var(--bg-tertiary);
+    transform: scale(1.2);
+    border-color: var(--primary-color);
+}
+
+.emoji-grid::-webkit-scrollbar {
+    width: 8px;
+}
+
+.emoji-grid::-webkit-scrollbar-track {
+    background: var(--bg-secondary);
+    border-radius: 4px;
+}
+
+.emoji-grid::-webkit-scrollbar-thumb {
+    background: var(--primary-color);
+    border-radius: 4px;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const emojiPickerBtn = document.getElementById('emojiPickerBtn');
+    const emojiPicker = document.getElementById('emojiPicker');
+    const iconInput = document.getElementById('{{ form.icon.id_for_label }}');
+    
+    // เปิด/ปิด emoji picker
+    if (emojiPickerBtn) {
+        emojiPickerBtn.addEventListener('click', function() {
+            if (emojiPicker.style.display === 'none') {
+                emojiPicker.style.display = 'block';
+            } else {
+                emojiPicker.style.display = 'none';
+            }
+        });
+    }
+    
+    // เลือก emoji
+    const emojiBtns = document.querySelectorAll('.emoji-btn');
+    emojiBtns.forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            const emoji = this.getAttribute('data-emoji');
+            if (iconInput) {
+                iconInput.value = emoji;
+                emojiPicker.style.display = 'none';
+                // แสดง emoji ที่เลือกบนปุ่ม
+                emojiPickerBtn.textContent = emoji;
+            }
+        });
+    });
+    
+    // ถ้ามีค่า emoji อยู่แล้ว ให้แสดงบนปุ่ม
+    if (iconInput && iconInput.value && iconInput.value.match(/[\u{1F300}-\u{1F9FF}]/u)) {
+        emojiPickerBtn.textContent = iconInput.value;
+    }
+});
+</script>
+{% endblock %}
+

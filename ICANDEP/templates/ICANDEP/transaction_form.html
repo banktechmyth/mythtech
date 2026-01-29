@@ -1,0 +1,225 @@
+{% extends 'ICANDEP/base.html' %}
+
+{% block title %}{{ title }} - ระบบจัดการรายรับรายจ่าย{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="bi bi-{% if transaction %}pencil{% else %}plus-circle{% endif %} me-2"></i>{{ title }}
+                </h6>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.title.id_for_label }}" class="form-label">
+                                {{ form.title.label }} <span class="text-danger">*</span>
+                            </label>
+                            {{ form.title }}
+                            {% if form.title.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.title.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.amount.id_for_label }}" class="form-label">
+                                {{ form.amount.label }} <span class="text-danger">*</span>
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text">฿</span>
+                                {{ form.amount }}
+                            </div>
+                            {% if form.amount.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.amount.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.transaction_type.id_for_label }}" class="form-label">
+                                {{ form.transaction_type.label }} <span class="text-danger">*</span>
+                            </label>
+                            {{ form.transaction_type }}
+                            {% if form.transaction_type.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.transaction_type.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.category.id_for_label }}" class="form-label">
+                                {{ form.category.label }} <span class="text-danger">*</span>
+                            </label>
+                            {% if categories %}
+                                {{ form.category }}
+                            {% else %}
+                                <select name="category" id="{{ form.category.id_for_label }}" class="form-select" required>
+                                    <option value="">-- ยังไม่มีหมวดหมู่ กรุณารัน: python manage.py create_categories --</option>
+                                </select>
+                                <div class="alert alert-warning mt-2">
+                                    <i class="bi bi-exclamation-triangle me-2"></i>
+                                    ยังไม่มีหมวดหมู่ในระบบ กรุณารันคำสั่ง: <code>python manage.py create_categories</code>
+                                </div>
+                            {% endif %}
+                            {% if form.category.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.category.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.date.id_for_label }}" class="form-label">
+                                {{ form.date.label }} <span class="text-danger">*</span>
+                            </label>
+                            {{ form.date }}
+                            {% if form.date.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.date.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.description.id_for_label }}" class="form-label">
+                            {{ form.description.label }}
+                        </label>
+                        {{ form.description }}
+                        {% if form.description.errors %}
+                            <div class="text-danger small mt-1">
+                                {% for error in form.description.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">รายละเอียดเพิ่มเติม (ไม่บังคับ)</div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'ICANDEP:transaction_list' %}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left me-2"></i>ย้อนกลับ
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle me-2"></i>บันทึก
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // ข้อมูลหมวดหมู่จาก Django
+    const categories = {
+        'income': [
+            {% if categories %}
+                {% for cat in categories %}
+                    {% if cat.transaction_type == 'income' %}
+                        {id: {{ cat.id }}, name: '{{ cat.name }}'},
+                    {% endif %}
+                {% endfor %}
+            {% endif %}
+        ],
+        'expense': [
+            {% if categories %}
+                {% for cat in categories %}
+                    {% if cat.transaction_type == 'expense' %}
+                        {id: {{ cat.id }}, name: '{{ cat.name }}'},
+                    {% endif %}
+                {% endfor %}
+            {% endif %}
+        ]
+    };
+    
+    // Debug: แสดงจำนวนหมวดหมู่ใน console
+    console.log('หมวดหมู่รายรับ:', categories.income.length);
+    console.log('หมวดหมู่รายจ่าย:', categories.expense.length);
+    
+    const transactionTypeSelect = document.getElementById('{{ form.transaction_type.id_for_label }}');
+    const categorySelect = document.getElementById('{{ form.category.id_for_label }}');
+    
+    // ฟังก์ชันอัปเดตหมวดหมู่ตามประเภทธุรกรรม
+    function updateCategories() {
+        const selectedType = transactionTypeSelect.value;
+        const currentCategoryId = categorySelect.value;
+        
+        // ล้างตัวเลือกหมวดหมู่
+        categorySelect.innerHTML = '<option value="">-- เลือกหมวดหมู่ --</option>';
+        
+        // เพิ่มหมวดหมู่ตามประเภทที่เลือก
+        if (selectedType && categories[selectedType]) {
+            categories[selectedType].forEach(function(cat) {
+                const option = document.createElement('option');
+                option.value = cat.id;
+                option.textContent = cat.name;
+                if (cat.id == currentCategoryId) {
+                    option.selected = true;
+                }
+                categorySelect.appendChild(option);
+            });
+        }
+    }
+    
+    // ฟังก์ชันเริ่มต้น
+    function initializeForm() {
+        // Auto-select transaction type from URL parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        const typeParam = urlParams.get('type');
+        if (typeParam && transactionTypeSelect) {
+            transactionTypeSelect.value = typeParam;
+            updateCategories();
+        }
+        
+        // Set default date to today if not editing
+        {% if not transaction %}
+            const today = new Date().toISOString().split('T')[0];
+            const dateInput = document.getElementById('{{ form.date.id_for_label }}');
+            if (dateInput && !dateInput.value) {
+                dateInput.value = today;
+            }
+        {% endif %}
+        
+        // อัปเดตหมวดหมู่เมื่อเปลี่ยนประเภทธุรกรรม
+        if (transactionTypeSelect) {
+            transactionTypeSelect.addEventListener('change', updateCategories);
+            // อัปเดตครั้งแรกเมื่อโหลดหน้า
+            updateCategories();
+        }
+    }
+    
+    // รอให้ DOM โหลดเสร็จ
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initializeForm);
+    } else {
+        initializeForm();
+    }
+</script>
+{% endblock %}
