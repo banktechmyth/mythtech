@@ -12,7 +12,6 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 import os
-import socket
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -76,40 +75,28 @@ WSGI_APPLICATION = 'workapp.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-# ใช้ PostgreSQL จาก ENV (เหมาะกับ Vercel/Supabase), ถ้าไม่มีค่อยใช้ SQLite (local)
-DATABASE_URL = os.environ.get('POSTGRES_URL') or os.environ.get('DATABASE_URL')
-
-if DATABASE_URL:
+# ใช้ PostgreSQL บน Vercel, SQLite สำหรับ local development
+if os.environ.get('POSTGRES_URL') or os.environ.get('DATABASE_URL'):
+    # Production: ใช้ PostgreSQL จาก Vercel
     import dj_database_url
-    db = dj_database_url.parse(
-        DATABASE_URL,
-        conn_max_age=600,
-        conn_health_checks=True,
-    )
-
-    # บังคับใช้ IPv4 (แก้ปัญหา Vercel ต่อ Supabase แล้วโดน IPv6 ล้ม: "Cannot assign requested address")
-    # ตั้งค่า env บน Vercel: FORCE_IPV4=True
-    if os.environ.get('FORCE_IPV4', '').lower() in ('1', 'true', 'yes'):
-        host = db.get('HOST')
-        if host:
-            try:
-                db['HOST'] = socket.gethostbyname(host)  # resolve A record (IPv4)
-            except Exception:
-                pass
-
-    # Supabase ต้องใช้ SSL
-    db.setdefault('OPTIONS', {})
-    db['OPTIONS'].setdefault('sslmode', os.environ.get('PGSSLMODE', 'require'))
-    db['OPTIONS'].setdefault('connect_timeout', int(os.environ.get('PGCONNECT_TIMEOUT', '10')))
-
-    DATABASES = {'default': db}
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=os.environ.get('POSTGRES_URL') or os.environ.get('DATABASE_URL'),
+            conn_max_age=600,
+            conn_health_checks=True,
+        )
+    }
 else:
     DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
-        }
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'postgres',
+        'USER': 'postgres',
+        'PASSWORD': 'az0954852404',
+        'HOST': 'db.ixeaevilyqvsbopxakpo.supabase.co',
+        'POST': '5432',
     }
+}
 
 
 # Password validation
