@@ -71,23 +71,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'workapp.wsgi.application'
 
-
-# Database
-# https://docs.djangoproject.com/en/5.2/ref/settings/#databases
-
-# ใช้ PostgreSQL บน Vercel, SQLite สำหรับ local development
-if os.environ.get('POSTGRES_URL') or os.environ.get('DATABASE_URL'):
-    # Production: ใช้ PostgreSQL จาก Vercel
-    import dj_database_url
-    DATABASES = {
-        'default': dj_database_url.config(
-            default=os.environ.get('POSTGRES_URL') or os.environ.get('DATABASE_URL'),
-            conn_max_age=600,
-            conn_health_checks=True,
-        )
-    }
-else:
-    DATABASES = {
+DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'postgres',
